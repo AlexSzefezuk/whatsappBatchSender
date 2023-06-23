@@ -4,6 +4,7 @@ const qrcode = require('qrcode-terminal')
 const { Client } = require('whatsapp-web.js')
 
 const fileName = process.argv[2]
+const numberOfSessios = Number(process.argv[3])
 
 let firstRow = true
 let sendedMessagesCounter = 0
@@ -14,33 +15,54 @@ const timer = (min, max) => {
   }
 
   const time = getRandom(min, max)
-  console.log(`Esperando ${time.toFixed(2)} segundos`)
+  console.log(
+    `                                         Esperando ${time.toFixed(
+      2
+    )} segundos`
+  )
   return new Promise(resolve => {
     setTimeout(resolve, time * 1000)
   })
 }
 
-const client = new Client()
+const clients = {}
 
-client.on('qr', qr => {
-  qrcode.generate(qr, { small: true })
-})
+const sendMessage = async (phoneNumber, messageText, client) => {
+  await client.sendMessage(`${phoneNumber}@c.us`, messageText)
+}
 
-client.on('ready', async () => {
-  console.log('Cliente está pronto!')
-  const sendMessage = async (phoneNumber, messageText) => {
-    await client.sendMessage(`${phoneNumber}@c.us`, messageText)
+const whatsappSessioGenerator = async numberOfSessios => {
+  console.log('whatsappSessioGenerator iniciou')
+
+  for (let i = 1; i <= numberOfSessios; i++) {
+    clients[`client${i}`] = new Client()
+
+    clients[`client${i}`].on('qr', qr => {
+      qrcode.generate(qr, { small: true })
+    })
+
+    const readyPromise = new Promise(resolve => {
+      clients[`client${i}`].on('ready', () => {
+        console.log(`Cliente ${i} está pronto!`)
+        resolve()
+      })
+    })
+
+    clients[`client${i}`].initialize()
+
+    await readyPromise
   }
-  fileReader(sendMessage)
-})
 
-client.initialize()
+  fileReader(clients, sendMessage)
+}
 
-const fileReader = async sendMessage => {
+const fileReader = async (clients, sendMessage) => {
   const input = fs.createReadStream(`./${fileName}.csv`, { encoding: 'utf8' })
   const output = fs.createWriteStream(`./${fileName}Result.csv`, {
     encoding: 'utf8'
   })
+
+  let clientToUse = 1
 
   const transformStream = csv
     .parse({ headers: true, delimiter: ';', encoding: 'utf8' })
@@ -62,16 +84,20 @@ const fileReader = async sendMessage => {
         const message = row.mensagem
         // const message = 'alguma coisa'
 
+        await sendMessage(phoneNumber, message, clients[`client${clientToUse}`])
         await timer(1, 5)
-        await sendMessage(phoneNumber, message)
         ++sendedMessagesCounter
 
-        console.log(`Mensagem ${sendedMessagesCounter} enviada ${phoneNumber}`)
+        console.log(
+          `Mensagem ${sendedMessagesCounter} enviada ${phoneNumber} | Pelo whatsapp ${clientToUse}`
+        )
 
         let rowCopy = { ...row }
         rowCopy = Object.values(rowCopy)
 
         rowCopy.push('Enviado')
+
+        clientToUse = clientToUse === numberOfSessios ? 1 : ++clientToUse
 
         callback(null, rowCopy.join(';') + '\n')
       } catch (error) {
@@ -87,7 +113,12 @@ const fileReader = async sendMessage => {
 
   transformStream.on('end', async () => {
     output.end()
-    await timer(2,2)
-    client.destroy()
+    for (let i = 1; i <= numberOfSessios; i++) {
+      await timer(2, 2)
+      clients[`client${i}`].destroy()
+      console.log(`Whatsapp ${i} Finalizado`)
+    }
   })
 }
+
+whatsappSessioGenerator(numberOfSessios)
