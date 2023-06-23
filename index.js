@@ -30,11 +30,7 @@ client.on('qr', qr => {
 client.on('ready', async () => {
   console.log('Cliente está pronto!')
   const sendMessage = async (phoneNumber, messageText) => {
-    const response = await client.sendMessage(
-      `${phoneNumber}@c.us`,
-      messageText
-    )
-    return response
+    await client.sendMessage(`${phoneNumber}@c.us`, messageText)
   }
   fileReader(sendMessage)
 })
@@ -69,7 +65,7 @@ const fileReader = async sendMessage => {
         await timer(1, 5)
         await sendMessage(phoneNumber, message)
         ++sendedMessagesCounter
-        
+
         console.log(`Mensagem ${sendedMessagesCounter} enviada ${phoneNumber}`)
 
         let rowCopy = { ...row }
@@ -89,8 +85,9 @@ const fileReader = async sendMessage => {
     output.write(chunk)
   })
 
-  transformStream.on('end', () => {
+  transformStream.on('end', async () => {
     output.end()
+    await timer(2,2)
     client.destroy()
   })
 }
