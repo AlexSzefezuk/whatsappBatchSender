@@ -2,7 +2,6 @@ const fs = require('fs')
 const csv = require('fast-csv')
 const qrcode = require('qrcode-terminal')
 const { Client } = require('whatsapp-web.js')
-const { time } = require('console')
 
 const fileName = process.argv[2]
 
@@ -56,6 +55,7 @@ const fileReader = async sendMessage => {
 
         const phoneNumber = row.telefone || row.celular
         if (!phoneNumber) {
+          console.log(row)
           throw new Error('Coluna telefone não encontrada')
         }
 
