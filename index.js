@@ -16,7 +16,7 @@ const timer = (min, max) => {
 
   const time = getRandom(min, max)
   console.log(
-    `                                         Esperando ${time.toFixed(
+    `                                                             Esperando ${time.toFixed(
       2
     )} segundos`
   )
@@ -27,8 +27,18 @@ const timer = (min, max) => {
 
 const clients = {}
 
+const isWhatsappValidadtor = (client, phoneNumber) =>
+  client.isRegisteredUser(phoneNumber)
+
 const sendMessage = async (phoneNumber, messageText, client) => {
-  await client.sendMessage(`${phoneNumber}@c.us`, messageText)
+  const isWhatsapp = await isWhatsappValidadtor(client, phoneNumber)
+
+  if (isWhatsapp) {
+    await client.sendMessage(`${phoneNumber}@c.us`, messageText)
+    return 'Enviada'
+  } else {
+    return 'Número não possui Whatsapp'
+  }
 }
 
 const whatsappSessioGenerator = async numberOfSessios => {
@@ -81,21 +91,36 @@ const fileReader = async (clients, sendMessage) => {
           throw new Error('Coluna telefone não encontrada')
         }
 
-        const message = row.mensagem
-        // const message = 'alguma coisa'
+        // const message = row.mensagem
+        const message = `Você sabia que beneficiário do INSS tem direito 
 
-        await sendMessage(phoneNumber, message, clients[`client${clientToUse}`])
-        await timer(1, 5)
-        ++sendedMessagesCounter
+ao melhor cartão de crédito do Brasil? 💳🇧🇷
+✅ Cartão INTERNACIONAL, com pacote de beneficios, SEM ANUIDADE + limite de compras e limite de saque em dinheiro. 
+        
+LIGUE 0800 878 0238 ou CHAME no whatsapp da nossa -central de atendimento ao consumidor* clicando aqui: https://bit.ly/AtendimentoConsumidor_Torun
+        
+🚫Não quer receber mais nossas mensagens? Escreva SAIR`
 
-        console.log(
-          `Mensagem ${sendedMessagesCounter} enviada ${phoneNumber} | Pelo whatsapp ${clientToUse}`
+        const response = await sendMessage(
+          phoneNumber,
+          message,
+          clients[`client${clientToUse}`]
         )
+
+        if (response === 'Enviada') {
+          await timer(1, 5)
+          ++sendedMessagesCounter
+          console.log(
+            `Mensagem ${sendedMessagesCounter} enviada ${phoneNumber} | Pelo whatsapp ${clientToUse}`
+          )
+        } else {
+          console.log(`${phoneNumber} Não possui Whatsapp`)
+        }
 
         let rowCopy = { ...row }
         rowCopy = Object.values(rowCopy)
 
-        rowCopy.push('Enviado')
+        rowCopy.push(response)
 
         clientToUse = clientToUse === numberOfSessios ? 1 : ++clientToUse
 
