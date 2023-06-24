@@ -1,7 +1,7 @@
 const fs = require('fs')
 const csv = require('fast-csv')
 const qrcode = require('qrcode-terminal')
-const { Client } = require('whatsapp-web.js')
+const { Client, LocalAuth } = require('whatsapp-web.js')
 
 const fileName = process.argv[2]
 const numberOfSessios = Number(process.argv[3])
@@ -45,7 +45,9 @@ const whatsappSessioGenerator = async numberOfSessios => {
   console.log('whatsappSessioGenerator iniciou')
 
   for (let i = 1; i <= numberOfSessios; i++) {
-    clients[`client${i}`] = new Client()
+    clients[`client${i}`] = new Client({
+      authStrategy: new LocalAuth({ clientId: `client${i}` })
+    })
 
     clients[`client${i}`].on('qr', qr => {
       qrcode.generate(qr, { small: true })
@@ -91,15 +93,15 @@ const fileReader = async (clients, sendMessage) => {
           throw new Error('Coluna telefone não encontrada')
         }
 
-        // const message = row.mensagem
-        const message = `Você sabia que beneficiário do INSS tem direito 
+        const message = row.mensagem
+        //         const message = `Você sabia que beneficiário do INSS tem direito
 
-ao melhor cartão de crédito do Brasil? 💳🇧🇷
-✅ Cartão INTERNACIONAL, com pacote de beneficios, SEM ANUIDADE + limite de compras e limite de saque em dinheiro. 
-        
-LIGUE 0800 878 0238 ou CHAME no whatsapp da nossa -central de atendimento ao consumidor* clicando aqui: https://bit.ly/AtendimentoConsumidor_Torun
-        
-🚫Não quer receber mais nossas mensagens? Escreva SAIR`
+        // ao melhor cartão de crédito do Brasil? 💳🇧🇷
+        // ✅ Cartão INTERNACIONAL, com pacote de beneficios, SEM ANUIDADE + limite de compras e limite de saque em dinheiro.
+
+        // LIGUE 0800 878 0238 ou CHAME no whatsapp da nossa -central de atendimento ao consumidor* clicando aqui: https://bit.ly/AtendimentoConsumidor_Torun
+
+        // 🚫Não quer receber mais nossas mensagens? Escreva SAIR`
 
         const response = await sendMessage(
           phoneNumber,
@@ -108,11 +110,11 @@ LIGUE 0800 878 0238 ou CHAME no whatsapp da nossa -central de atendimento ao con
         )
 
         if (response === 'Enviada') {
-          await timer(1, 5)
           ++sendedMessagesCounter
           console.log(
             `Mensagem ${sendedMessagesCounter} enviada ${phoneNumber} | Pelo whatsapp ${clientToUse}`
           )
+          await timer(1, 5)
         } else {
           console.log(`${phoneNumber} Não possui Whatsapp`)
         }
