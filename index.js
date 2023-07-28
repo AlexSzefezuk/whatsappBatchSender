@@ -94,14 +94,6 @@ const fileReader = async (clients, sendMessage) => {
         }
 
         const message = row.mensagem
-        //         const message = `Você sabia que beneficiário do INSS tem direito
-
-        // ao melhor cartão de crédito do Brasil? 💳🇧🇷
-        // ✅ Cartão INTERNACIONAL, com pacote de beneficios, SEM ANUIDADE + limite de compras e limite de saque em dinheiro.
-
-        // LIGUE 0800 878 0238 ou CHAME no whatsapp da nossa -central de atendimento ao consumidor* clicando aqui: https://bit.ly/AtendimentoConsumidor_Torun
-
-        // 🚫Não quer receber mais nossas mensagens? Escreva SAIR`
 
         const response = await sendMessage(
           phoneNumber,
